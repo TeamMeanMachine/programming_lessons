@@ -8,23 +8,18 @@ import org.team2471.frc.lib.control.commands.runOnceCommand
 
 
 object Autonomous: Autonomi() {
-
-//    val paths: MutableMap<String, Trajectory<SwerveSample>> = findChoreoPaths()  <-- already inside Autonomi
-
     /** Supplier that sets the robot's pose. Used inside [setDrivePositionToAutoStartPose] */
     override val drivePoseSetter: (Pose2d) -> Unit = { /* noop */ }
 
     /** Warmup function for speeding up auto loop times. Runs when selected auto changes. */
     override val warmupFunction: () -> Unit = {
-        println("scheduling auto warmup")
-//        CommandScheduler.getInstance().schedule(warmupDriveAlongPath())
-        println("finished scheduling auto warmup")
+        println("warmup")
     }
 
     /** Chooser for selecting autonomous commands */
     override val autoChooser: LoggedDashboardChooser<AutoCommand?> =
         LoggedDashboardChooser<AutoCommand?>("Auto Chooser").apply {
-            addOption("Print Hello", AutoCommand(printHelloCommand()))
+            addOption("Print Hello", AutoCommand(printHelloCommand())) // Add "Print Hello" auto
         }
 
     /** Chooser for test commands */

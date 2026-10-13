@@ -1,14 +1,11 @@
 @file:JvmName("Main") // set the compiled Java class name to "Main" rather than "MainKt"
 package frc.team2471.frc2026
 
-import com.ctre.phoenix6.SignalLogger
 import edu.wpi.first.hal.FRCNetComm.tInstances
 import edu.wpi.first.hal.FRCNetComm.tResourceType
 import edu.wpi.first.hal.HAL
 import edu.wpi.first.wpilibj.DriverStation
-import edu.wpi.first.wpilibj.IterativeRobotBase
 import edu.wpi.first.wpilibj.RobotBase
-import edu.wpi.first.wpilibj.Watchdog
 import edu.wpi.first.wpilibj2.command.CommandScheduler
 import edu.wpi.first.wpilibj2.command.Commands
 import org.littletonrobotics.junction.LogFileUtil
@@ -19,8 +16,6 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader
 import org.littletonrobotics.junction.wpilog.WPILOGWriter
 import org.team2471.frc.lib.control.LoopLogger
 import org.team2471.frc.lib.hardware.loggedMotors.MasterMotor
-import org.team2471.frc.lib.energy.BatteryLogger
-import org.team2471.frc.lib.energy.FindAmpsManager
 import org.team2471.frc.lib.util.RobotMode
 import org.team2471.frc.lib.util.robotMode
 
@@ -41,16 +36,6 @@ object Robot : LoggedRobot() {
     @get:JvmName("RobotIsEnabled")
     val isEnabled: Boolean
         get() = DriverStation.isEnabled()
-
-    @get:JvmName("RobotIsAutonomous")
-    val isAutonomous: Boolean
-        get() = DriverStation.isAutonomous()
-    @get:JvmName("RobotIsDisabled")
-    val isDisabled: Boolean
-        get() = DriverStation.isDisabled()
-    @get:JvmName("RobotIsAutonomousEnabled")
-    val isAutonomousEnabled: Boolean
-        get() = DriverStation.isAutonomousEnabled()
 
     override fun isEnabled(): Boolean = DriverStation.isEnabled()
     override fun isAutonomous(): Boolean = DriverStation.isAutonomous()
@@ -87,38 +72,17 @@ object Robot : LoggedRobot() {
 
         DriverStation.silenceJoystickConnectionWarning(true)
 
-        SignalLogger.setPath("")
-//        SignalLogger.start()
-        SignalLogger.stop()
-
         // Start AdvantageKit logger
         Logger.start()
         // Call all subsystems, make sure their init's run
         allSubsystems.forEach { println("activating subsystem ${it.name}") }
         println("We see ${Autonomous.paths.size} paths.")
-
-        // Code stolen from Mechanical Advantage:
-        // https://github.com/Mechanical-Advantage/RobotCode2025Public/blob/3ea1eb036b2dc06e4ecb14d98bba7f602a1cd62a/src/main/java/org/littletonrobotics/frc2025/Robot.java#L145
-        // Changes loop overrun warning to be 0.2 instead of 0.02
-        val loopOverrunWarningTimeout = 0.2
-        try {
-            val watchdogField = IterativeRobotBase::class.java.getDeclaredField("m_watchdog")
-            watchdogField.setAccessible(true)
-            val watchdog = watchdogField.get(this) as Watchdog
-            watchdog.setTimeout(loopOverrunWarningTimeout)
-        } catch (_: Exception) {
-            DriverStation.reportWarning("Failed to disable loop overrun warnings.", false)
-        }
-        commandScheduler.setPeriod(loopOverrunWarningTimeout)
     }
 
     /** This function is called periodically during all modes.  */
     override fun robotPeriodic() {
         LoopLogger.reset()
         LoopLogger.record("after LL reset")
-        // Optionally switch the thread to high priority to improve loop
-        // timing (see the template project documentation for details)
-//         Threads.setCurrentThreadPriority(true, 99);
 
         if (isEnabled) {
             if (wasDisabled) {
@@ -130,8 +94,6 @@ object Robot : LoggedRobot() {
             wasDisabled = true
         }
 
-        FindAmpsManager.periodic()
-
         LoopLogger.record("b4 CommandScheduler")
         try {
             commandScheduler.run()
@@ -139,16 +101,7 @@ object Robot : LoggedRobot() {
             println("ConcurrentModificationException!!!! $e")
         }
         LoopLogger.record("after CommandScheduler")
-
-        BatteryLogger.logData()
-        LoopLogger.record("after powerTracker update")
         MasterMotor.periodic()
-        LoopLogger.record("after Motor logging")
-        FindAmpsManager.periodicAfterScheduler()
-        LoopLogger.record("after Battery logging")
-
-        // Return to non-RT thread priority (do not modify the first argument)
-//         Threads.setCurrentThreadPriority(false, 10);
         LoopLogger.record("Robot periodic()")
     }
 
@@ -178,8 +131,7 @@ object Robot : LoggedRobot() {
     override fun autonomousPeriodic() {}
 
     /** This function is called once when teleop is enabled.  */
-    override fun teleopInit() {
-    }
+    override fun teleopInit() {}
 
     /** This function is called periodically during operator control.  */
     override fun teleopPeriodic() {}
@@ -197,8 +149,7 @@ object Robot : LoggedRobot() {
     override fun simulationInit() {}
 
     /** This function is called periodically whilst in simulation.  */
-    override fun simulationPeriodic() {
-    }
+    override fun simulationPeriodic() {}
 }
 
 /**
