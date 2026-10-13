@@ -6,7 +6,7 @@ import org.team2471.frc.lib.control.MeanCommandXboxController
 object OI: SubsystemBase("OI") {
 
     // Controller
-    val driverController = MeanCommandXboxController(0, false)
+    val driverController = MeanCommandXboxController(0)
 
     init {
         println("inside OI init")
