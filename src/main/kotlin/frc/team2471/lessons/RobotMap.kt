@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package frc.team2471.frc2026
+package frc.team2471.lessons
 
 object AnalogSensors {
 }

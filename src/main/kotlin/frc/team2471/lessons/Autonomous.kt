@@ -1,4 +1,4 @@
-package frc.team2471.frc2026
+package frc.team2471.lessons
 
 import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.wpilibj2.command.Command

@@ -1,5 +1,5 @@
 @file:JvmName("Main") // set the compiled Java class name to "Main" rather than "MainKt"
-package frc.team2471.frc2026
+package frc.team2471.lessons
 
 import edu.wpi.first.hal.FRCNetComm.tInstances
 import edu.wpi.first.hal.FRCNetComm.tResourceType
