@@ -45,8 +45,8 @@ object Robot : LoggedRobot() {
     // Subsystems:
     // MUST define an individual variable for all subsystems inside this class or else @AutoLogOutput will not work -2025
     val oi = OI
-
-    var allSubsystems = arrayOf(oi)
+    val intakeSubsystem = IntakeSubsystem
+    var allSubsystems = arrayOf(oi, intakeSubsystem)
 
     init {
         // Tells FRC we use Kotlin
