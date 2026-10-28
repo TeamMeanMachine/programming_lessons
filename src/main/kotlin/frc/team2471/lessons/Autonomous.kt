@@ -20,15 +20,12 @@ object Autonomous: Autonomi() {
     /** Chooser for selecting autonomous commands */
     override val autoChooser: LoggedDashboardChooser<AutoCommand?> =
         LoggedDashboardChooser<AutoCommand?>("Auto Chooser").apply {
+
             addOption("Print Hello", AutoCommand(printHelloCommand()))
 
-            addOption("8 Foot Straight", AutoCommand(eightFootStraight()))
+            // TODO: Add more auto commands to the chooser here...
 
-            addOption("Square Path Auto", AutoCommand(squarePathAuto()))
 
-            addOption("8 Foot Spin", AutoCommand(eightFootSpin()))
-
-            addOption("Circle Path Auto", AutoCommand(circlePathAuto()))
         }
 
     /** Chooser for test commands */
@@ -44,42 +41,18 @@ object Autonomous: Autonomi() {
     /** Autonomous commands */
 
     fun printHelloCommand(): Command {
-        return runOnceCommand { println("Hello, world!") }
-    }
-
-    fun eightFootStraight(): Command {
-        return Drive.driveAlongChoreoPath(paths["eightFootStraight"]!!, resetOdometry = true)
-    }
-
-    fun squarePathAuto(): Command {
-        val path = paths["sixFootSquare"]!!
         return sequenceCommand(
-            Drive.driveAlongChoreoPath(path.getSplit(0).get(), resetOdometry = true),
-
-            runOnceCommand { println("finished split 0") },
-
-            Drive.driveAlongChoreoPath(path.getSplit(1).get(), resetOdometry = false),
-
-            runOnceCommand { println("finished split 1") },
-
-            Drive.driveAlongChoreoPath(path.getSplit(2).get(), resetOdometry = false),
-
-            runOnceCommand { println("finished split 2") },
-
-            Drive.driveAlongChoreoPath(path.getSplit(3).get(), resetOdometry = false),
-
-            runOnceCommand { println("finished the path") },
+            runOnceCommand { println("Hello I am an autonomous function!") },
+            runOnceCommand { println("I am the second command in the sequence!") },
+            runOnceCommand { println("Ok bye!") }
         )
     }
 
-    // Run the 8-foot spin path
-    fun eightFootSpin(): Command {
-        return Drive.driveAlongChoreoPath(paths["eightFootSpin"]!!, resetOdometry = true)
-    }
+    // TODO: Create custom driveAlongChoreoPath auto routines here
 
-    // Run the 6-foot circle path
-    fun circlePathAuto(): Command {
-        return Drive.driveAlongChoreoPath(paths["sixFootCircle"]!!, resetOdometry = true)
-    }
+
+
+
+
 
 }
