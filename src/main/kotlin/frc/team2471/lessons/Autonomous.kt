@@ -4,7 +4,6 @@ import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.wpilibj2.command.Command
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser
 import org.team2471.frc.lib.control.Autonomi
-import org.team2471.frc.lib.control.commands.runOnce
 import org.team2471.frc.lib.control.commands.runOnceCommand
 import org.team2471.frc.lib.control.commands.sequenceCommand
 
@@ -21,17 +20,15 @@ object Autonomous: Autonomi() {
     /** Chooser for selecting autonomous commands */
     override val autoChooser: LoggedDashboardChooser<AutoCommand?> =
         LoggedDashboardChooser<AutoCommand?>("Auto Chooser").apply {
-            // Add the 8 ft straight as the default option in the chooser
-            addDefaultOption("8 Foot Straight", AutoCommand(eightFootStraight()))
+            addOption("Print Hello", AutoCommand(printHelloCommand()))
 
-            // Add the 6x6 square path as an option
-            addOption("6x6 Square", AutoCommand(squarePathTest()))
+            addOption("8 Foot Straight", AutoCommand(eightFootStraight()))
 
-            // Add the 8 ft spin path as an option
+            addOption("Square Path Auto", AutoCommand(squarePathAuto()))
+
             addOption("8 Foot Spin", AutoCommand(eightFootSpin()))
 
-            // Add the circle path as an option
-            addOption("6 foot circle", AutoCommand(circlePathTest()))
+            addOption("Circle Path Auto", AutoCommand(circlePathAuto()))
         }
 
     /** Chooser for test commands */
@@ -46,35 +43,32 @@ object Autonomous: Autonomi() {
 
     /** Autonomous commands */
 
-    // Run the 8-foot straight path
+    fun printHelloCommand(): Command {
+        return runOnceCommand { println("Hello, world!") }
+    }
+
     fun eightFootStraight(): Command {
-        // Simple path used for tuning the drivetrain
         return Drive.driveAlongChoreoPath(paths["eightFootStraight"]!!, resetOdometry = true)
     }
 
-    // Run the 6-foot square path
-    fun squarePathTest(): Command {
-        // Saves the full path to a variable for easy typing
+    fun squarePathAuto(): Command {
         val path = paths["sixFootSquare"]!!
         return sequenceCommand(
-            // Drive along the first split of the path and reset the robot position to the start of the path
             Drive.driveAlongChoreoPath(path.getSplit(0).get(), resetOdometry = true),
 
-            runOnce { println("finished split 0") }, // Usually a robot action would be run in between splits (like scoring or picking up a game piece)
+            runOnceCommand { println("finished split 0") },
 
-            // Drive along the second split of the path, we do not need to reset the robot position
             Drive.driveAlongChoreoPath(path.getSplit(1).get(), resetOdometry = false),
 
-            runOnce { println("finished split 1") },
+            runOnceCommand { println("finished split 1") },
 
-            // Continue to drive along the rest of the path
             Drive.driveAlongChoreoPath(path.getSplit(2).get(), resetOdometry = false),
 
-            runOnce { println("finished split 2") },
+            runOnceCommand { println("finished split 2") },
 
             Drive.driveAlongChoreoPath(path.getSplit(3).get(), resetOdometry = false),
 
-            runOnce { println("finished the path") },
+            runOnceCommand { println("finished the path") },
         )
     }
 
@@ -84,7 +78,7 @@ object Autonomous: Autonomi() {
     }
 
     // Run the 6-foot circle path
-    fun circlePathTest(): Command {
+    fun circlePathAuto(): Command {
         return Drive.driveAlongChoreoPath(paths["sixFootCircle"]!!, resetOdometry = true)
     }
 
