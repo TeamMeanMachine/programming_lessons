@@ -2,6 +2,8 @@
 
 package frc.team2471.lessons
 
+import com.ctre.phoenix6.CANBus
+
 object AnalogSensors {
 }
 
@@ -12,10 +14,24 @@ object Sparks { // SPARK REV motors
 }
 
 object Talons { // TalonFX CTRE motors
-    val TEST_MOTOR = -1
+    const val FRONT_RIGHT_DRIVE = 23
+    const val FRONT_RIGHT_STEER = 22
+
+    const val FRONT_LEFT_DRIVE = 16
+    const val FRONT_LEFT_STEER = 15
+
+    const val BACK_RIGHT_DRIVE = 1
+    const val BACK_RIGHT_STEER = 24
+
+    const val BACK_LEFT_DRIVE = 10
+    const val BACK_LEFT_STEER = 11
 }
 
 object CANCoders {
+    const val FRONT_RIGHT = 31
+    const val FRONT_LEFT = 30
+    const val BACK_RIGHT = 32
+    const val BACK_LEFT = 33
 }
 
 object PWMPort {
@@ -28,6 +44,7 @@ object CANivores {
 }
 
 object CANSensors {
+    const val PIGEON = 34
 }
 
 object I2CPort {

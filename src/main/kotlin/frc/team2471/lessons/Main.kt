@@ -18,6 +18,7 @@ import org.team2471.frc.lib.control.LoopLogger
 import org.team2471.frc.lib.hardware.loggedMotors.MasterMotor
 import org.team2471.frc.lib.util.RobotMode
 import org.team2471.frc.lib.util.robotMode
+import java.net.NetworkInterface
 
 
 /**
@@ -27,6 +28,7 @@ import org.team2471.frc.lib.util.robotMode
  * project.
  */
 object Robot : LoggedRobot() {
+    val isCompBot = getCompBotBoolean()
     private var wasDisabled = true
     var beforeFirstEnable = true
         private set
@@ -150,6 +152,30 @@ object Robot : LoggedRobot() {
 
     /** This function is called periodically whilst in simulation.  */
     override fun simulationPeriodic() {}
+
+
+    private fun getCompBotBoolean(): Boolean {
+        var compBot = true
+        if (robotMode == RobotMode.REAL) {
+            val networkInterfaces =  NetworkInterface.getNetworkInterfaces()
+            println("retrieving network interfaces")
+            for (iFace in networkInterfaces) {
+                println(iFace.name)
+                if (iFace.name == "eth0") {
+                    println("NETWORK NAME--->${iFace.name}<----")
+                    var macString = ""
+                    for (byteVal in iFace.hardwareAddress){
+                        macString += String.format("%s", byteVal)
+                    }
+                    println("FORMATTED---->$macString<-----")
+
+                    compBot = (macString == "0-128475710531")
+                }
+            }
+        } else { println("Not real so I am compbot") }
+        println("I am compbot = $compBot")
+        return compBot
+    }
 }
 
 /**
