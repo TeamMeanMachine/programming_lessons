@@ -23,6 +23,12 @@ object Talons { // TalonFX CTRE motors
 
     const val BACK_LEFT_DRIVE = 10
     const val BACK_LEFT_STEER = 11
+
+    const val INTAKE_ROLLER = 54
+    const val INTAKE_PIVOT = 55
+    const val ELEVATOR_0 = 60
+    const val ELEVATOR_1 = 59
+    const val EXTENSION = 58
 }
 
 object CANCoders {
