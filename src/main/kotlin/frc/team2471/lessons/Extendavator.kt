@@ -107,8 +107,6 @@ object Extendavator: SubsystemBase("Extendavator") {
         pivotMotor.configSim(DCMotor.getKrakenX44(1), 0.01)
     }
 
-    fun stow() = goToPose(Pose.DRIVE)
-
     fun goToPose(pose: Pose) {
         elevatorSetpoint = pose.elevatorHeight
         extensionSetpoint = pose.extensionDistance

@@ -1,12 +1,13 @@
 package frc.team2471.lessons
 
 import edu.wpi.first.math.geometry.Translation2d
-import edu.wpi.first.wpilibj2.command.Commands
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 import org.team2471.frc.lib.control.MeanCommandXboxController
 import org.team2471.frc.lib.control.commands.toCommand
 import org.team2471.frc.lib.math.deadband
 import org.team2471.frc.lib.math.normalize
+import org.team2471.frc.lib.units.degrees
+import org.team2471.frc.lib.units.feet
 
 object OI: SubsystemBase("OI") {
     val driverController = MeanCommandXboxController(0)
@@ -38,9 +39,12 @@ object OI: SubsystemBase("OI") {
 
         // Default command, normal field-relative drive
         Drive.defaultCommand = Drive.joystickPercentageDrive()
+        Extendavator.defaultCommand = Extendavator.goToPoseCmd(Pose.STOW)
 
-        // Switch to X pattern when X button is pressed
-        driverController.x().onTrue(Commands.runOnce({ Drive.xPose() }, Drive))
+        driverController.x().whileTrue(Extendavator.goToPoseCmd(Pose.INTAKE_MIN))
+        driverController.b().whileTrue(Extendavator.goToPoseCmd(Pose.INTAKE_MAX))
+        driverController.a().whileTrue(Extendavator.goToPoseCmd(Pose.SCORE))
+        driverController.y().whileTrue(Extendavator.goToPoseCmd(Pose.SCORE + Pose(1.75.feet, 3.0.feet, 90.0.degrees)))
 
         // Reset gyro to 0° or 180° when back button is pressed
         driverController.back().onTrue({

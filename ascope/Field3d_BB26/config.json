@@ -1,0 +1,58 @@
+{
+  "name": "BunnyBots 2026",
+  "isFTC": false,
+  "coordinateSystem": "wall-blue",
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 90
+    },
+    {
+      "axis": "z",
+      "degrees": 90
+    }
+
+  ],
+  "widthInches": 658.33,
+  "heightInches": 316.0,
+  "driverStations": [
+    [
+      8.2775425,
+      -3.07975
+    ],
+    [
+      8.2775425,
+      -1.25095
+    ],
+    [
+      8.2775425,
+      1.8288
+    ],
+    [
+      -8.2775425,
+      3.07975
+    ],
+    [
+      -8.2775425,
+      1.25095
+    ],
+    [
+      -8.2775425,
+      -1.8288
+    ]
+  ],
+  "aprilTags": [],
+  "gamePieces": [
+    {
+      "name": "Cone",
+      "rotations": [],
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "stagedObjects": [
+      ]
+    }
+  ]
+}
