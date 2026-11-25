@@ -85,26 +85,26 @@ object Extendavator: SubsystemBase("Extendavator") {
 
         elevatorMotor.applyConfiguration {
             currentLimits(30.0, 40.0, 1.0)
-            sensorToMechanismRatio(5.33)
-            p(0.4)
+            sensorToMechanismRatio(1.0/5.33)
+            p(0.2)
         }
         elevatorMotor.addFollower(Talons.ELEVATOR_1)
-        elevatorMotor.configSim(DCMotor.getKrakenX60(2), 0.01)
+        elevatorMotor.configSim(DCMotor.getKrakenX60(2), 0.0001)
 
         extensionMotor.applyConfiguration {
             currentLimits(30.0, 40.0, 1.0)
             //        Motor to sprocket ratio * 12 tooth sprocket * 0.25in chain link length
-            sensorToMechanismRatio((14.0/40.0) * 12.0 * 0.25)
+            sensorToMechanismRatio(1.0/((14.0/40.0) * 12.0 * 0.25))
             p(0.4)
         }
-        extensionMotor.configSim(DCMotor.getKrakenX44(1), 0.01)
+        extensionMotor.configSim(DCMotor.getKrakenX44(1), 0.0000000000001)
 
         pivotMotor.applyConfiguration {
             currentLimits(30.0, 40.0, 1.0)
             sensorToMechanismRatio(33.75)
-            p(0.4)
+            p(36.3)
         }
-        pivotMotor.configSim(DCMotor.getKrakenX44(1), 0.01)
+        pivotMotor.configSim(DCMotor.getKrakenX44(1), 0.00000000000001)
     }
 
     fun goToPose(pose: Pose) {
@@ -113,9 +113,9 @@ object Extendavator: SubsystemBase("Extendavator") {
         pivotSetpoint = pose.pivotAngle
     }
 
-    fun goToPoseCmd(pose: Pose): Command = runCommand {
+    fun goToPoseCmd(pose: Pose): Command = runCommand(this) {
         goToPose(pose)
-    }.until { atSetpoint }
+    }
 
     fun zeroExtension() {
         extensionMotor.setPosition(MIN_EXTENSION_DIST.asInches)
@@ -134,7 +134,7 @@ object Extendavator: SubsystemBase("Extendavator") {
                 0.0.degrees,
                 Extendavator.elevatorHeight,
                 Extendavator.extensionDistance - Extendavator.MIN_EXTENSION_DIST,
-                Extendavator.pivotMotor.position.value
+                Extendavator.pivotAngle
             )
         }
 
