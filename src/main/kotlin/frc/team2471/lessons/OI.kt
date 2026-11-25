@@ -46,6 +46,9 @@ object OI: SubsystemBase("OI") {
         driverController.a().whileTrue(Extendavator.goToPoseCmd(Pose.SCORE))
         driverController.y().whileTrue(Extendavator.goToPoseCmd(Pose.SCORE + Pose(1.75.feet, 3.0.feet, 90.0.degrees)))
 
+        driverController.rightTrigger(0.1).whileTrue(Extendavator.moveBetweenPosesCmd())
+        driverController.leftTrigger(0.1).whileTrue(Extendavator.controlWithJoystick())
+
         // Reset gyro to 0° or 180° when back button is pressed
         driverController.back().onTrue({
             println("zero gyro")

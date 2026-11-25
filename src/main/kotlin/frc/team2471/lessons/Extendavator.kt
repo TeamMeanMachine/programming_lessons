@@ -17,6 +17,7 @@ import org.team2471.frc.lib.hardware.ctre.currentLimits
 import org.team2471.frc.lib.hardware.ctre.p
 import org.team2471.frc.lib.hardware.ctre.sensorToMechanismRatio
 import org.team2471.frc.lib.hardware.loggedMotors.LoggedTalonFX
+import org.team2471.frc.lib.math.deadband
 import org.team2471.frc.lib.units.asInches
 import org.team2471.frc.lib.units.asMeters
 import org.team2471.frc.lib.units.cos
@@ -35,10 +36,13 @@ object Extendavator: SubsystemBase("Extendavator") {
     val MIN_EXTENSION_DIST = 22.0.inches
     val MAX_EXTENSION_DIST = 3.5.feet
 
+    val MAX_ELEVATOR_HEIGHT = 59.25.inches
+    val MAX_PIVOT_ANGLE = 90.0.degrees
+
     @get:AutoLogOutput(key = "Extendavator/elevatorSetpoint")
     var elevatorSetpoint = 0.0.feet
         set(value) {
-            val safeValue = value.coerceIn(0.0.inches, 59.25.inches)
+            val safeValue = value.coerceIn(0.0.inches, MAX_ELEVATOR_HEIGHT)
             elevatorMotor.setControl(PositionVoltage(safeValue.asInches))
             field = safeValue
         }
@@ -54,7 +58,7 @@ object Extendavator: SubsystemBase("Extendavator") {
     @get:AutoLogOutput(key = "Extendavator/pivotSetpoint")
     var pivotSetpoint = 0.0.degrees
         set(value) {
-            val safeValue = value.coerceIn(-45.0.degrees, 45.0.degrees)
+            val safeValue = value.coerceIn(-MAX_PIVOT_ANGLE, MAX_PIVOT_ANGLE)
             pivotMotor.setControl(PositionVoltage(safeValue))
             field = safeValue
         }
@@ -73,7 +77,9 @@ object Extendavator: SubsystemBase("Extendavator") {
     @get:AutoLogOutput(key = "Extendavator/pivotError")
     val pivotError: Angle get() = pivotMotor.closedLoopError.valueAsDouble.rotations
 
-    val totalErrorPose = Pose(heightError, extensionError, pivotError)
+    val totalErrorPose: Pose get() = Pose(heightError, extensionError, pivotError)
+
+    @get:AutoLogOutput(key = "Extendavator/atSetpoint")
     val atSetpoint: Boolean
         get() {
             val error = totalErrorPose.absoluteValue()
@@ -94,7 +100,7 @@ object Extendavator: SubsystemBase("Extendavator") {
         extensionMotor.applyConfiguration {
             currentLimits(30.0, 40.0, 1.0)
             //        Motor to sprocket ratio * 12 tooth sprocket * 0.25in chain link length
-            sensorToMechanismRatio(1.0/((14.0/40.0) * 12.0 * 0.25))
+            sensorToMechanismRatio(1.0/1.05)
             p(0.4)
         }
         extensionMotor.configSim(DCMotor.getKrakenX44(1), 0.0000000000001)
@@ -102,9 +108,9 @@ object Extendavator: SubsystemBase("Extendavator") {
         pivotMotor.applyConfiguration {
             currentLimits(30.0, 40.0, 1.0)
             sensorToMechanismRatio(33.75)
-            p(36.3)
+            p(17.0)
         }
-        pivotMotor.configSim(DCMotor.getKrakenX44(1), 0.00000000000001)
+        pivotMotor.configSim(DCMotor.getKrakenX44(1), 0.000000000001)
     }
 
     fun goToPose(pose: Pose) {
@@ -119,6 +125,27 @@ object Extendavator: SubsystemBase("Extendavator") {
 
     fun zeroExtension() {
         extensionMotor.setPosition(MIN_EXTENSION_DIST.asInches)
+    }
+
+
+    fun moveBetweenPosesCmd() = runCommand(this) {
+        val pose1 = Pose.INTAKE_MIN
+        val pose2 = Pose.INTAKE_MAX
+        val poseDifference = pose2 - pose1
+        val interpolatedPose = pose1 + poseDifference * OI.driverController.rightTriggerAxis.deadband(0.1)
+
+        goToPose(interpolatedPose)
+    }
+
+    fun controlWithJoystick() = runCommand(this, Drive) {
+        val height =  MAX_ELEVATOR_HEIGHT * -OI.driverController.leftY.coerceIn(-1.0, 0.0)
+        val extension = MAX_EXTENSION_DIST * OI.driverController.leftX.coerceIn(0.0, 1.0)
+        val pivot = MAX_PIVOT_ANGLE * OI.driverController.rightY
+
+        val pose = Pose(height, extension, pivot)
+
+        goToPose(pose) // Tell Extendavator to move to the pose
+        Drive.stop() // Stop moving the drivetrain because we are using the joysticks
     }
 
 

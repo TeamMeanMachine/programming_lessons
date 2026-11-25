@@ -61,9 +61,12 @@ object Drive: SwerveDriveSubsystem(DriveConstants.drivetrainConstants, *DriveCon
     init {
         println("inside Drive init")
 
-        useMapleSim = true
+        useMapleSim = false
 
         setStateStdDevs(DRIVE_STD_DEVS)
+
+
+        pose = Pose2d(3.0, 3.0, Rotation2d(0.0))
 
         println("max acceleration ${DriveConstants.kMaxAcceleration.asMetersPerSecondPerSecond}")
 
