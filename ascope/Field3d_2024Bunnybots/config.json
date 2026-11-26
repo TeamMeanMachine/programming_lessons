@@ -1,0 +1,16 @@
+{
+    "name": "Bunnybots 2024",
+    "rotations": [{"axis":"x", "degrees": 90}, {"axis":"z", "degrees":180}],
+    "widthInches": 648,
+	"heightInches": 324,
+    "defaultOrigin": "blue",
+    "driverStations": [
+      [-9.5, -2],
+      [-9.5, 0],
+      [-9.5, 2],
+      [9.5, 2],
+      [9.5, 0],
+      [9.5, -2]
+    ],
+    "gamePieces": []
+  }

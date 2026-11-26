@@ -1,0 +1,25 @@
+{
+  "sourceUrl": "BunnyBot2024",
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 90
+    },
+    {
+      "axis": "y",
+      "degrees": 0
+    },
+    {
+      "axis": "z",
+      "degrees": -270
+    }
+  ],
+  "position": [
+    0,
+    0,
+    0
+  ],
+  "cameras": [],
+  "components": [],
+  "name": "BunnyBot2024"
+}
