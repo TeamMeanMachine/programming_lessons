@@ -1,27 +1,29 @@
 package frc.team2471.lessons
 
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController
-import edu.wpi.first.math.Matrix
-import edu.wpi.first.math.VecBuilder
-import edu.wpi.first.math.controller.PIDController
-import edu.wpi.first.math.geometry.Pose2d
-import edu.wpi.first.math.geometry.Rotation2d
-import edu.wpi.first.math.kinematics.ChassisSpeeds
-import edu.wpi.first.math.numbers.N1
-import edu.wpi.first.math.numbers.N3
-import org.team2471.frc.lib.control.LoopLogger
+import org.team2471.frc.lib.commands.command
+import org.team2471.frc.lib.environment.demoSpeed
+import org.team2471.frc.lib.environment.isBlueAlliance
+import org.team2471.frc.lib.logging.LoopLogger
 import org.team2471.frc.lib.math.cube
 import org.team2471.frc.lib.math.square
 import org.team2471.frc.lib.swerve.SwerveDriveSubsystem
-import org.team2471.frc.lib.units.asMetersPerSecondPerSecond
 import org.team2471.frc.lib.units.degrees
 import org.team2471.frc.lib.units.inches
 import org.team2471.frc.lib.math.normalize
+import org.team2471.frc.lib.units.asMetersPerSecondSquared
 import org.team2471.frc.lib.units.inchesPerSecond
-import org.team2471.frc.lib.units.metersPerSecondPerSecond
+import org.team2471.frc.lib.units.metersPerSecondSquared
 import org.team2471.frc.lib.units.perSecond
-import org.team2471.frc.lib.util.demoSpeed
-import org.team2471.frc.lib.util.isBlueAlliance
+import org.wpilib.math.controller.PIDController
+import org.wpilib.math.geometry.Pose2d
+import org.wpilib.math.geometry.Rotation2d
+import org.wpilib.math.geometry.Translation2d
+import org.wpilib.math.kinematics.ChassisVelocities
+import org.wpilib.math.linalg.Matrix
+import org.wpilib.math.linalg.VecBuilder
+import org.wpilib.math.numbers.N1
+import org.wpilib.math.numbers.N3
 
 
 object Drive: SwerveDriveSubsystem(DriveConstants.drivetrainConstants, *DriveConstants.moduleConfigs) {
@@ -43,10 +45,9 @@ object Drive: SwerveDriveSubsystem(DriveConstants.drivetrainConstants, *DriveCon
     val DRIVE_STD_DEVS: Matrix<N3?, N1?> = VecBuilder.fill(0.1, 0.1, 0.05)
 
     // Drive Feedback controllers
-    override val autoPilot = createAPObject(Double.POSITIVE_INFINITY.inchesPerSecond, 100.0.metersPerSecondPerSecond, 2.0.metersPerSecondPerSecond.perSecond, 0.5.inches, 1.0.degrees)
+    override val autoPilot = createAPObject(Double.POSITIVE_INFINITY.inchesPerSecond, 100.0.metersPerSecondSquared, 2.0.metersPerSecondSquared.perSecond, 0.5.inches, 1.0.degrees)
 
-    override val pathXController = PIDController(7.0, 0.0, 0.0)
-    override val pathYController = PIDController(7.0, 0.0, 0.0)
+    override val pathTranslationController = PIDController(7.0, 0.0, 0.0)
     override val pathThetaController = PIDController(8.0, 0.0, 0.0)
 
     override val autoDriveToPointController = PIDController(3.0, 0.0, 0.1)
@@ -54,40 +55,42 @@ object Drive: SwerveDriveSubsystem(DriveConstants.drivetrainConstants, *DriveCon
 
     override val driveAtAnglePIDController = PhoenixPIDController(7.7, 0.0, 0.072)
 
-    override val isDisabledSupplier: () -> Boolean = { Robot.isDisabled }
+    /** false = paths made on the blue side, true = paths made on the red side */
+    override val choreoPathsStartOnRed: Boolean = false
 
-    override val choreoPathsStartOnRed: Boolean = false // false=made on the blue side, true=made on the red side
+    override var centerOfRotation: Translation2d = Translation2d(0.0.inches, 0.0.inches)
 
     init {
-        println("inside Drive init")
+        println("Drive initialization")
 
         useMapleSim = false
 
-        setStateStdDevs(DRIVE_STD_DEVS)
+        // MUST start inside the field on bootup for accurate heading measurements due to a Particle Filter bug.
+        pose = Pose2d(3.0, 3.0, heading)
 
-
-        pose = Pose2d(3.0, 3.0, Rotation2d(0.0))
-
-        println("max acceleration ${DriveConstants.kMaxAcceleration.asMetersPerSecondPerSecond}")
-
-        finalInitialization()
+        println("max acceleration ${DriveConstants.kMaxAcceleration.asMetersPerSecondSquared}")
     }
 
     override fun periodic() {
-        LoopLogger.record("Inside Drive periodic")
+        LoopLogger.record("Drive periodic")
 
-        LoopLogger.record("b4 Drive piodc")
-        super.periodic() // Must call this
-        LoopLogger.record("super Drive piodc")
+        LoopLogger.record("super Drive periodic")
+        super.periodic()
+        LoopLogger.record("super Drive periodic")
 
-        LoopLogger.record("Drive pirdc")
+        LoopLogger.record("Drive periodic")
+    }
+
+
+    override fun defaultCommand() = command("Drive Default", this) {
+        await(joystickPercentageDrive())
     }
 
     /**
-     * Returns [ChassisSpeeds] with a percentage power from the driver controller.
+     * Returns [ChassisVelocities] with a percentage power from the driver controller.
      */
-    override fun getJoystickPercentageSpeeds(): ChassisSpeeds {
-        val rawJoystick = OI.rawDriveTranslation
+    override fun getJoystickPercentageVelocities(): ChassisVelocities {
+        val rawJoystick = OI.driveTranslation
         // Square drive input and apply demoSpeed
         val power = rawJoystick.norm.square() * demoSpeed
         // Apply modified power to joystick vector and flip depending on alliance
@@ -96,7 +99,13 @@ object Drive: SwerveDriveSubsystem(DriveConstants.drivetrainConstants, *DriveCon
         // Cube rotation input and apply demoSpeed
         val omega = OI.driveRotation.cube() * demoSpeed
 
-        return ChassisSpeeds(joystickTranslation.x, joystickTranslation.y, omega)
+        return ChassisVelocities(joystickTranslation.x, joystickTranslation.y, omega)
+    }
+
+    /** Command to zero robot gyro */
+    fun zeroGyroCommand() = command("zeroGyroCommand", Drive) {
+        println("zero gyro command")
+        zeroGyro()
     }
 
 }

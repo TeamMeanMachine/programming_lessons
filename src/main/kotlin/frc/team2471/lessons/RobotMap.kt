@@ -2,10 +2,15 @@
 
 package frc.team2471.lessons
 
+import com.ctre.phoenix6.CANBus
+import org.wpilib.hardware.bus.CANPort
+
 object AnalogSensors {
 }
 
 object DigitalSensors {
+    const val INTAKE_STOP_SENSOR_0 = 9
+    const val INTAKE_STOP_SENSOR_1 = 1
 }
 
 object Sparks { // SPARK REV motors
@@ -44,7 +49,13 @@ object PWMPort {
 object ServoPort {
 }
 
-object CANivores {
+object CANBusses {
+    // CAN buses on Systemcore. For CTRE CAN devices
+    val CAN_0 = CANBus(CANPort.CAN_S0)
+    val CAN_1 = CANBus(CANPort.CAN_S1)
+    val CAN_2 = CANBus(CANPort.CAN_S2)
+    val CAN_3 = CANBus(CANPort.CAN_S3)
+    val CAN_4 = CANBus(CANPort.CAN_S4)
 }
 
 object CANSensors {

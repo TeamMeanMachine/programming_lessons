@@ -1,23 +1,26 @@
 @file:JvmName("Main") // set the compiled Java class name to "Main" rather than "MainKt"
 package frc.team2471.lessons
 
-import edu.wpi.first.hal.FRCNetComm.tInstances
-import edu.wpi.first.hal.FRCNetComm.tResourceType
-import edu.wpi.first.hal.HAL
-import edu.wpi.first.wpilibj.DriverStation
-import edu.wpi.first.wpilibj.RobotBase
-import edu.wpi.first.wpilibj2.command.CommandScheduler
-import edu.wpi.first.wpilibj2.command.Commands
+import com.ctre.phoenix6.SignalLogger
 import org.littletonrobotics.junction.LogFileUtil
-import org.littletonrobotics.junction.LoggedRobot
+import org.littletonrobotics.junction.LoggedOpModeRobot
 import org.littletonrobotics.junction.Logger
 import org.littletonrobotics.junction.networktables.NT4Publisher
 import org.littletonrobotics.junction.wpilog.WPILOGReader
 import org.littletonrobotics.junction.wpilog.WPILOGWriter
-import org.team2471.frc.lib.control.LoopLogger
+import org.team2471.frc.lib.autonomous.test.TestOpMode
+import org.team2471.frc.lib.commands.PeriodicMechanism
+import org.team2471.frc.lib.control.isConnected
+import org.team2471.frc.lib.energy.BatteryLogger
+import org.team2471.frc.lib.environment.RobotType
+import org.team2471.frc.lib.environment.robotType
 import org.team2471.frc.lib.hardware.loggedMotors.MasterMotor
-import org.team2471.frc.lib.util.RobotMode
-import org.team2471.frc.lib.util.robotMode
+import org.team2471.frc.lib.logging.LoopLogger
+import org.wpilib.command3.Mechanism
+import org.wpilib.command3.Scheduler
+import org.wpilib.driverstation.RobotState
+import org.wpilib.framework.RobotBase
+import java.net.NetworkInterface
 
 
 /**
@@ -26,133 +29,204 @@ import org.team2471.frc.lib.util.robotMode
  * the package after creating this project, you must also update the build.gradle file in the
  * project.
  */
-object Robot : LoggedRobot() {
-    private var wasDisabled = true
+object Robot : LoggedOpModeRobot(0.01) {
+    val scheduler = Scheduler.getDefault()
+    val isCompBot = getCompBotBoolean()
+
+    @get:JvmName("isRobotEnabled")
+    val isEnabled get() = RobotState.isEnabled()
+    @get:JvmName("isRobotDisabled")
+    val isDisabled get() = RobotState.isDisabled()
+    @get:JvmName("isRobotTeleop")
+    val isTeleop get() = RobotState.isTeleop()
+    @get:JvmName("isRobotTeleopEnabled")
+    val isTeleopEnabled get() = RobotState.isTeleopEnabled()
+    @get:JvmName("isRobotAutonomous")
+    val isAutonomous get() = RobotState.isAutonomous()
+    @get:JvmName("isRobotAutonomousEnabled")
+    val isAutonomousEnabled get() = RobotState.isAutonomousEnabled()
+    @get:JvmName("isRobotUtility")
+    val isUtility get() = RobotState.isUtility()
+    @get:JvmName("isRobotUtilityEnabled")
+    val isUtilityEnabled get() = RobotState.isUtilityEnabled()
+
+    // Mechanisms:
+    // MUST define an individual variable for all mechanisms inside this class or else @AutoLogOutput will not work -2025
+    val drive = Drive
+    val oi = OI
+    val extendavator = Extendavator
+
+    @Suppress("RemoveExplicitTypeArguments")
+    val allMechanisms = arrayOf<PeriodicMechanism>(drive, extendavator, oi)
+
     var beforeFirstEnable = true
         private set
 
-    val commandScheduler = CommandScheduler.getInstance()
-
-    @get:JvmName("RobotIsEnabled")
-    val isEnabled: Boolean
-        get() = DriverStation.isEnabled()
-
-    override fun isEnabled(): Boolean = DriverStation.isEnabled()
-    override fun isAutonomous(): Boolean = DriverStation.isAutonomous()
-    override fun isDisabled(): Boolean = DriverStation.isDisabled()
-    override fun isAutonomousEnabled(): Boolean = DriverStation.isAutonomousEnabled()
-
-    // Subsystems:
-    // MUST define an individual variable for all subsystems inside this class or else @AutoLogOutput will not work -2025
-    val oi = OI
-    val drive = Drive
-    val extendavator = Extendavator
-
-    var allSubsystems = arrayOf(drive, extendavator, oi)
-
     init {
-        // Tells FRC we use Kotlin
-        HAL.report(tResourceType.kResourceType_Language, tInstances.kLanguage_Kotlin)
+        println("Robot init")
 
         // Set up data receivers & replay source
-        when (robotMode) {
-            RobotMode.REAL -> { // Running on a real robot, log to a USB stick ("/U/logs")
-//                Logger.addDataReceiver(WPILOGWriter())
+        when (robotType) {
+            RobotType.REAL -> { // Running on a real robot, log to a USB stick ("/U/logs")
+                Logger.addDataReceiver(WPILOGWriter())
                 Logger.addDataReceiver(NT4Publisher()) // Only log to NT if FMS is not connected
             }
-            RobotMode.SIM -> {
+            RobotType.SIM -> {
                 Logger.addDataReceiver(NT4Publisher())
                 Logger.addDataReceiver(WPILOGWriter())
             } // Running a physics simulator, log to NT
-            RobotMode.REPLAY -> { // Replaying a log, set up replay source
-                setUseTiming(true) // false - simulate as fast as possible, true - simulate in real time (particle filter needs true)
+            RobotType.REPLAY -> { // Replaying a log, set up replay source
+//                setUseTiming(true) // false - simulate as fast as possible, true - simulate in real time (particle filter needs true)
                 val logPath = LogFileUtil.findReplayLog()
                 Logger.setReplaySource(WPILOGReader(logPath))
                 Logger.addDataReceiver(WPILOGWriter(LogFileUtil.addPathSuffix(logPath, "_sim")))
             }
         }
 
-        DriverStation.silenceJoystickConnectionWarning(true)
+
+        SignalLogger.stop()
 
         // Start AdvantageKit logger
         Logger.start()
+
+
         // Call all subsystems, make sure their init's run
-        allSubsystems.forEach { println("activating subsystem ${it.name}") }
-        println("We see ${Autonomous.paths.size} paths.")
+        allMechanisms.forEach { println("activating subsystem ${it.name}") }
+        println("OI driverController isConnected: ${OI.driverController.isConnected}")
+        val pathCount = Autonomous.paths.count()
+        println("Autonomous path count: $pathCount")
+
+        println("Finished Robot init")
     }
 
     /** This function is called periodically during all modes.  */
     override fun robotPeriodic() {
         LoopLogger.reset()
-        LoopLogger.record("after LL reset")
+        LoopLogger.record("Robot periodic()")
 
-        if (isEnabled) {
-            if (wasDisabled) {
-                enabledInit()
-                beforeFirstEnable = false
-                wasDisabled = false
+        // Run each mechanism's periodic()
+        // this periodic is designed to be called before [scheduler.run()]
+        allMechanisms.forEach {
+            LoopLogger.record("${it.name} periodic()")
+            it.periodic()
+            LoopLogger.record("${it.name} periodic()")
+        }
+
+        // Runs the Scheduler.  This is responsible for polling buttons, adding newly scheduled
+        // commands, running already-scheduled commands, removing finished or interrupted commands,
+        // and running subsystem periodic() methods.  This must be called from the robot's periodic
+        // block in order for anything in the Command-based framework to work.
+        LoopLogger.record("Scheduler")
+        scheduler.run()
+        LoopLogger.record("Scheduler")
+
+        // Run each mechanism's telemetryPeriodic()
+        // this periodic is designed to be called after [scheduler.run()]
+        allMechanisms.forEach {
+            LoopLogger.record("${it.name} telemetryPeriodic()")
+            it.telemetryPeriodic()
+            LoopLogger.record("${it.name} telemetryPeriodic()")
+        }
+
+        // Scheduler logging
+        Logger.recordOutput("Scheduler/scheduler", scheduler)
+
+        var allCommandsRuntime = 0.0
+        scheduler.runningCommands.forEach {
+            val runtimeS = scheduler.lastCommandRuntimeMs(it) / 1000.0
+            allCommandsRuntime += runtimeS
+            if (runtimeS >= 0.0) {
+                Logger.recordOutput("Scheduler/CommandRuntime/${it.name()}", runtimeS)
             }
-        } else {
-            wasDisabled = true
         }
+        Logger.recordOutput("Scheduler/CommandRuntime/ALL", allCommandsRuntime)
+        Logger.recordOutput("Scheduler/totalRuntime", scheduler.lastRuntimeMs() / 1000.0)
 
-        LoopLogger.record("b4 CommandScheduler")
-        try {
-            commandScheduler.run()
-        } catch (e: ConcurrentModificationException) {
-            println("ConcurrentModificationException!!!! $e")
-        }
-        LoopLogger.record("after CommandScheduler")
-        MasterMotor.periodic()
+
+
+        LoopLogger.record("BatteryLogger update")
+        BatteryLogger.logData()
+        LoopLogger.record("BatteryLogger update")
+
         LoopLogger.record("Robot periodic()")
     }
 
-    fun enabledInit() {}
-
     /** This function is called once when the robot is disabled.  */
     override fun disabledInit() {
-        Autonomous.autonomousCommand?.cancel() // This makes sure that the autonomous stops running when teleop starts running.
-        Autonomous.testCommand?.cancel()
+        println("Robot disabled init")
+        Drive.coastMode()
+        beforeFirstEnable = false // disabledInit is called after the robot is enabled. Does not get called on robot init
+    }
+
+    /** Function called once when the robot exits disabled state. Similar to enabledInit */
+    override fun disabledExit() {
+        println("Robot disabled exit")
+        Drive.brakeMode()
     }
 
     /** This function is called periodically when disabled.  */
-    override fun disabledPeriodic() {
-        if (beforeFirstEnable) {
-            Autonomous.updateSelectedAuto(true)
-        } else {
-            Autonomous.updateSelectedAuto(false)
+    override fun disabledPeriodic() {}
+
+    /** This function is called once when the robot is first started up in sim.  */
+    override fun simulationInit() {}
+
+    /** This function is called when the driver station connects.  */
+    override fun driverStationConnected() {
+        println("DS connected yay! ฅ^•ﻌ•^ฅ")
+    }
+
+    /** This function is called periodically whilst in simulation.  */
+    override fun simulationPeriodic() {
+        LoopLogger.record("Motor simPeriodic")
+        MasterMotor.periodic()
+        LoopLogger.record("Motor simPeriodic")
+        // Run simulationPeriodic() for each mechanism
+        allMechanisms.forEach {
+            LoopLogger.record("${it.name} simPeriodic)")
+            it.simulationPeriodic()
+            LoopLogger.record("${it.name} simPeriodic)")
         }
     }
 
-    /** This function is called once when auto is enabled.  */
-    override fun autonomousInit() {
-        commandScheduler.schedule(Autonomous.autonomousCommand ?: Commands.runOnce({ println("THE AUTONOMOUS COMMAND IS NULL") }))
+    /**
+     * Disables all defaults for all mechanisms, except for the [exceptions] provided.
+     *
+     * Designed to be called as a function in a [TestOpMode], [OpMode], or [Command]. Or anything that implements scoping.
+     *
+     * If this function is called inside any **OpMode**, it will disable all default commands only while the OpMode is selected,
+     * afterward it will re-enable them. (This "scoping" feature is a part of Commandsv3/OpModes and is documented in wpilib docs)
+     */
+    fun disableAllDefaultCommands(vararg exceptions: Mechanism) {
+        allMechanisms.filterNot { exceptions.contains(it) }.forEach {
+            it.defaultCommand = it.idle()
+        }
     }
 
-    /** This function is called periodically during autonomous.  */
-    override fun autonomousPeriodic() {}
+    /** Gets the mac address and uses that to determine if Robot is comp bot or not. (Hardware specific) */
+    private fun getCompBotBoolean(): Boolean {
+        var compBot = true
+        if (robotType == RobotType.REAL) {
+            val networkInterfaces = NetworkInterface.getNetworkInterfaces()
+            println("retrieving network interfaces")
+            for (iFace in networkInterfaces) {
+                println(iFace.name)
+                if (iFace.name == "eth0") {
+                    println("NETWORK NAME--->${iFace.name}<----")
+                    var macString = ""
+                    for (byteVal in iFace.hardwareAddress){
+                        macString += String.format("%s", byteVal)
+                    }
+                    println("FORMATTED---->$macString<-----")
 
-    /** This function is called once when teleop is enabled.  */
-    override fun teleopInit() {}
-
-    /** This function is called periodically during operator control.  */
-    override fun teleopPeriodic() {}
-
-    /** This function is called once when test mode is enabled.  */
-    override fun testInit() {
-        CommandScheduler.getInstance().cancelAll() // Cancels all running commands at the start of test mode.
-        CommandScheduler.getInstance().schedule((Autonomous.testCommand ?: Commands.runOnce({println("THE TEST COMMAND IS NULL")})))
+                    compBot = (macString == "0-128475710531") // Change this boolean expression to set comp bot.
+                }
+            }
+        } else { println("Not real so I am compbot") }
+        println("I am compbot = $compBot")
+        return compBot
     }
-
-    /** This function is called periodically during test mode.  */
-    override fun testPeriodic() {}
-
-    /** This function is called once when the robot is first started up.  */
-    override fun simulationInit() {}
-
-    /** This function is called periodically whilst in simulation.  */
-    override fun simulationPeriodic() {}
 }
+
 
 /**
  * Main initialization function. Do not perform any initialization here
@@ -172,4 +246,6 @@ object Robot : LoggedRobot() {
  * Rename * Refactoring when renaming the object, it will get changed everywhere
  * including here.)
  */
-fun main() = RobotBase.startRobot { Robot }
+fun main() = RobotBase.startRobot {
+    Robot
+}

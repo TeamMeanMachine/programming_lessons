@@ -1,34 +1,25 @@
 package frc.team2471.lessons
 
 import com.ctre.phoenix6.controls.PositionVoltage
-import edu.wpi.first.math.geometry.Pose3d
-import edu.wpi.first.math.geometry.Rotation3d
-import edu.wpi.first.math.geometry.Translation3d
-import edu.wpi.first.math.system.plant.DCMotor
-import edu.wpi.first.units.measure.Angle
-import edu.wpi.first.units.measure.Distance
-import edu.wpi.first.wpilibj2.command.Command
-import edu.wpi.first.wpilibj2.command.SubsystemBase
 import org.littletonrobotics.junction.AutoLogOutput
-import org.team2471.frc.lib.control.commands.runCommand
-import org.team2471.frc.lib.hardware.ctre.addFollower
-import org.team2471.frc.lib.hardware.ctre.applyConfiguration
-import org.team2471.frc.lib.hardware.ctre.currentLimits
-import org.team2471.frc.lib.hardware.ctre.p
-import org.team2471.frc.lib.hardware.ctre.sensorToMechanismRatio
+import org.team2471.frc.lib.commands.MechanismBase
+import org.team2471.frc.lib.commands.command
+import org.team2471.frc.lib.commands.periodic
+import org.team2471.frc.lib.hardware.ctre.*
 import org.team2471.frc.lib.hardware.loggedMotors.LoggedTalonFX
 import org.team2471.frc.lib.math.deadband
-import org.team2471.frc.lib.units.asInches
-import org.team2471.frc.lib.units.asMeters
-import org.team2471.frc.lib.units.cos
-import org.team2471.frc.lib.units.degrees
-import org.team2471.frc.lib.units.feet
-import org.team2471.frc.lib.units.inches
-import org.team2471.frc.lib.units.meters
-import org.team2471.frc.lib.units.rotations
-import org.team2471.frc.lib.units.sin
+import org.team2471.frc.lib.units.*
+import org.wpilib.math.geometry.Pose3d
+import org.wpilib.math.geometry.Rotation3d
+import org.wpilib.math.geometry.Translation3d
+import org.wpilib.math.system.DCMotor
+import org.wpilib.telemetry.Telemetry
+import org.wpilib.units.measure.Angle
+import org.wpilib.units.measure.Distance
 
-object Extendavator: SubsystemBase("Extendavator") {
+object Extendavator: MechanismBase("Extendavator") {
+    val table = Telemetry.getTable("Extendavator")
+
     val elevatorMotor = LoggedTalonFX(Talons.ELEVATOR_0)
     val extensionMotor = LoggedTalonFX(Talons.EXTENSION)
     val pivotMotor = LoggedTalonFX(Talons.INTAKE_PIVOT)
@@ -101,16 +92,16 @@ object Extendavator: SubsystemBase("Extendavator") {
             currentLimits(30.0, 40.0, 1.0)
             //        Motor to sprocket ratio * 12 tooth sprocket * 0.25in chain link length
             sensorToMechanismRatio(1.0/1.05)
-            p(0.4)
+            p(0.5)
         }
-        extensionMotor.configSim(DCMotor.getKrakenX44(1), 0.0000000000001)
+        extensionMotor.configSim(DCMotor.getKrakenX44(1), 0.0001)
 
         pivotMotor.applyConfiguration {
             currentLimits(30.0, 40.0, 1.0)
             sensorToMechanismRatio(33.75)
             p(17.0)
         }
-        pivotMotor.configSim(DCMotor.getKrakenX44(1), 0.000000000001)
+        pivotMotor.configSim(DCMotor.getKrakenX44(1), 0.0001)
     }
 
     fun goToPose(pose: Pose) {
@@ -119,33 +110,44 @@ object Extendavator: SubsystemBase("Extendavator") {
         pivotSetpoint = pose.pivotAngle
     }
 
-    fun goToPoseCmd(pose: Pose): Command = runCommand(this) {
-        goToPose(pose)
+    fun goToPoseCmd(pose: Pose, stopWhenAtSetpoint: Boolean = true) = command("goToPoseCmd", this) {
+        periodic {
+            goToPose(pose)
+            val error = (pose - Pose.current).absoluteValue()
+
+            if (stopWhenAtSetpoint && error.elevatorHeight < 1.0.inches && error.extensionDistance < 1.0.inches && error.pivotAngle < 1.0.degrees) {
+                stop()
+                println("finished going to pose")
+            }
+        }
     }
 
     fun zeroExtension() {
         extensionMotor.setPosition(MIN_EXTENSION_DIST.asInches)
     }
 
+    fun moveBetweenPosesCmd() = command("moveBetweenPosesCmd",this) {
+        periodic {
+            val pose1 = Pose.INTAKE_MIN
+            val pose2 = Pose.INTAKE_MAX
+            val poseDifference = pose2 - pose1
+            val interpolatedPose = pose1 + poseDifference * OI.driverController.rightTrigger.deadband(0.1)
 
-    fun moveBetweenPosesCmd() = runCommand(this) {
-        val pose1 = Pose.INTAKE_MIN
-        val pose2 = Pose.INTAKE_MAX
-        val poseDifference = pose2 - pose1
-        val interpolatedPose = pose1 + poseDifference * OI.driverController.rightTriggerAxis.deadband(0.1)
-
-        goToPose(interpolatedPose)
+            goToPose(interpolatedPose)
+        }
     }
 
-    fun controlWithJoystick() = runCommand(this, Drive) {
-        val height =  MAX_ELEVATOR_HEIGHT * -OI.driverController.leftY.coerceIn(-1.0, 0.0)
-        val extension = MAX_EXTENSION_DIST * OI.driverController.leftX.coerceIn(0.0, 1.0)
-        val pivot = MAX_PIVOT_ANGLE * OI.driverController.rightY
+    fun controlWithJoystick() = command("controlWithJoystick", this, Drive) { // Require Extendavator and Drive because we are using both Mechanisms.
+        periodic {
+            val height =  MAX_ELEVATOR_HEIGHT * -OI.driverController.leftY.coerceIn(-1.0, 0.0)
+            val extension = MAX_EXTENSION_DIST * OI.driverController.leftX.coerceIn(0.0, 1.0)
+            val pivot = MAX_PIVOT_ANGLE * OI.driverController.rightY
 
-        val pose = Pose(height, extension, pivot)
+            val pose = Pose(height, extension, pivot)
 
-        goToPose(pose) // Tell Extendavator to move to the pose
-        Drive.stop() // Stop moving the drivetrain because we are using the joysticks
+            goToPose(pose) // Tell Extendavator to move to the pose
+            Drive.stop() // Stop moving the drivetrain because we are using the joysticks
+        }
     }
 
 

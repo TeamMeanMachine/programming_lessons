@@ -1,60 +1,136 @@
 package frc.team2471.lessons
 
-import edu.wpi.first.math.geometry.Translation2d
-import edu.wpi.first.wpilibj2.command.SubsystemBase
-import org.team2471.frc.lib.control.MeanCommandXboxController
-import org.team2471.frc.lib.control.commands.toCommand
+import org.team2471.frc.lib.commands.MechanismBase
+import org.team2471.frc.lib.commands.command
+import org.team2471.frc.lib.environment.demoMode
+import org.team2471.frc.lib.logging.LoopLogger
+import org.team2471.frc.lib.logging.getTunable
+import org.team2471.frc.lib.math.applyDeadband
 import org.team2471.frc.lib.math.deadband
 import org.team2471.frc.lib.math.normalize
 import org.team2471.frc.lib.units.degrees
 import org.team2471.frc.lib.units.feet
+import org.wpilib.command3.button.CommandXboxController
+import org.wpilib.math.geometry.Pose2d
+import org.wpilib.math.geometry.Translation2d
+import org.wpilib.opmode.PeriodicOpMode
+import org.wpilib.opmode.Teleop
+import org.wpilib.telemetry.Telemetry
 
-object OI: SubsystemBase("OI") {
-    val driverController = MeanCommandXboxController(0)
+object OI: MechanismBase("OI") {
+    private val table = Telemetry.getTable("OI")
+
+    val rotationMultiplierEntry = table.getTunable("Rotation Multiplier", 0.8, true)
+    val rotationMultiplier: Double
+        get() = rotationMultiplierEntry.get()
+
+    val driverController = CommandXboxController(0)
+    val operatorController = CommandXboxController(1)
 
     val deadbandDriver = 0.08
+    val deadbandOperator = 0.1
 
-    val driveTranslationX: Double
-        get() = driverController.leftY.deadband(deadbandDriver)
+    val rawDriveTranslationX: Double
+        get() = driverController.leftY
 
-    val driveTranslationY: Double
-        get() = driverController.leftX.deadband(deadbandDriver)
+    val rawDriveTranslationY: Double
+        get() = driverController.leftX
 
-    val rawDriveTranslation: Translation2d
+    val driveTranslation: Translation2d
         get() {
-            val translation = Translation2d(driveTranslationX, driveTranslationY)
-            return if (translation.norm > 1.0) {
-                translation.normalize()
+            val rawTranslation = Translation2d(rawDriveTranslationX, rawDriveTranslationY)
+            return if (rawTranslation.norm > 1.0) {
+                rawTranslation.normalize().applyDeadband(deadbandDriver)
             } else {
-                translation
+                rawTranslation.applyDeadband(deadbandDriver)
             }
         }
 
+    val driveTranslationX: Double get() = driveTranslation.x
+    val driveTranslationY: Double get() = driveTranslation.y
+
     val driveRotation: Double
-        get() = -driverController.rightX.deadband(deadbandDriver)
+        get() = -driverController.rightX.deadband(deadbandDriver) * rotationMultiplier
+
+    val driveLeftTrigger: Double
+        get() = driverController.leftTrigger
+
+    val driveLeftTriggerFullPress: Boolean
+        get() = driverController.leftTrigger > 0.95
+
+    val driveRightTrigger: Double
+        get() = driverController.rightTrigger
+
+    val driveRightTriggerFullPress: Boolean
+        get() = driverController.rightTrigger > 0.95
+
+    val operatorLeftTrigger: Double
+        get() = operatorController.leftTrigger
+
+    val operatorLeftY: Double
+        get() = operatorController.leftY.deadband(deadbandOperator)
+
+    val operatorLeftX: Double
+        get() = operatorController.leftX.deadband(deadbandOperator)
+
+    val operatorRightTrigger: Double
+        get() = operatorController.rightTrigger
+
+    val operatorRightX: Double
+        get() = operatorController.rightX.deadband(deadbandOperator)
+
+    val operatorRightY: Double
+        get() = operatorController.rightY.deadband(deadbandOperator)
 
     init {
-        println("inside OI init")
-        // Place OI Joystick code triggers here
+        println("OI initialization")
 
-        // Default command, normal field-relative drive
-        Drive.defaultCommand = Drive.joystickPercentageDrive()
-        Extendavator.defaultCommand = Extendavator.goToPoseCmd(Pose.STOW)
+        /** DEFAULT JOYSTICK BINDINGS. (Will be active by default in every OpMode unless overridden) */
 
-        driverController.x().whileTrue(Extendavator.goToPoseCmd(Pose.INTAKE_MIN))
-        driverController.b().whileTrue(Extendavator.goToPoseCmd(Pose.INTAKE_MAX))
-        driverController.a().whileTrue(Extendavator.goToPoseCmd(Pose.SCORE))
-        driverController.y().whileTrue(Extendavator.goToPoseCmd(Pose.SCORE + Pose(1.75.feet, 3.0.feet, 90.0.degrees)))
+        driverController.x().whileTrue(Extendavator.goToPoseCmd(Pose.INTAKE_MIN, false))
+        driverController.b().whileTrue(Extendavator.goToPoseCmd(Pose.INTAKE_MAX, false))
+        driverController.a().whileTrue(Extendavator.goToPoseCmd(Pose.SCORE, false))
+        driverController.y().whileTrue(Extendavator.goToPoseCmd(Pose.SCORE + Pose(1.75.feet, 3.0.feet, 90.0.degrees), false))
 
-        driverController.rightTrigger(0.1).whileTrue(Extendavator.moveBetweenPosesCmd())
+
+        driverController.rightTrigger(0.02).whileTrue(Extendavator.moveBetweenPosesCmd())
         driverController.leftTrigger(0.1).whileTrue(Extendavator.controlWithJoystick())
 
-        // Reset gyro to 0° or 180° when back button is pressed
-        driverController.back().onTrue({
-            println("zero gyro")
-            Drive.zeroGyro()
-        }.toCommand(Drive).ignoringDisable(true))
+        driverController.menu().onTrue(Drive.zeroGyroCommand()) // Zero Gyro
+        driverController.view().onTrue(command("zero pose") { Drive.pose = Pose2d(Translation2d(3.0, 3.0), Drive.heading) }) // Reset Odometry Position
 
-        println("end of OI init")
+    }
+
+    override fun periodic() {
+        LoopLogger.record("OI periodic")
+    }
+
+    @Teleop(name = "Country Roads!")
+    class TeleopMode: PeriodicOpMode() {
+        init {
+            println("TeleopMode selected")
+
+            /** Joystick bindings in teleop only */
+
+
+
+            if (demoMode) {
+                println("Demo mode enabled")
+                // Demo mode bindings go here
+            }
+
+        }
+
+        override fun disabledPeriodic() {}
+
+        override fun start() {
+            println("Teleop Mode start!")
+        }
+
+        override fun periodic() {}
+
+        override fun end() {
+            println("Teleop Mode end!")
+        }
     }
 }

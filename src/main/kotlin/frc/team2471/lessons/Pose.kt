@@ -1,11 +1,11 @@
 package frc.team2471.lessons
 
-import edu.wpi.first.units.measure.Angle
-import edu.wpi.first.units.measure.Distance
 import org.team2471.frc.lib.units.absoluteValue
 import org.team2471.frc.lib.units.degrees
 import org.team2471.frc.lib.units.feet
 import org.team2471.frc.lib.units.inches
+import org.wpilib.units.measure.Angle
+import org.wpilib.units.measure.Distance
 
 data class Pose(val elevatorHeight: Distance, val extensionDistance: Distance, val pivotAngle: Angle) {
     operator fun minus(other: Pose) = Pose(this.elevatorHeight - other.elevatorHeight, this.extensionDistance - other.extensionDistance, this.pivotAngle - other.pivotAngle)
