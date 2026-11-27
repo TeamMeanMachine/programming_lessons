@@ -2,8 +2,6 @@ package frc.team2471.lessons
 
 import org.team2471.frc.lib.commands.MechanismBase
 import org.team2471.frc.lib.commands.command
-import org.team2471.frc.lib.environment.demoMode
-import org.team2471.frc.lib.logging.LoopLogger
 import org.team2471.frc.lib.logging.getTunable
 import org.team2471.frc.lib.math.applyDeadband
 import org.team2471.frc.lib.math.deadband
@@ -87,10 +85,10 @@ object OI: MechanismBase("OI") {
 
         /** DEFAULT JOYSTICK BINDINGS. (Will be active by default in every OpMode unless overridden) */
 
-        driverController.x().whileTrue(Extendavator.goToPoseCmd(Pose.INTAKE_MIN, false))
-        driverController.b().whileTrue(Extendavator.goToPoseCmd(Pose.INTAKE_MAX, false))
-        driverController.a().whileTrue(Extendavator.goToPoseCmd(Pose.SCORE, false))
-        driverController.y().whileTrue(Extendavator.goToPoseCmd(Pose.SCORE + Pose(1.75.feet, 3.0.feet, 90.0.degrees), false))
+        driverController.x().whileTrue(Extendavator.goToPoseUntilAtSetpointCmd(Pose.INTAKE_MIN))
+        driverController.b().whileTrue(Extendavator.goToPoseUntilAtSetpointCmd(Pose.INTAKE_MAX))
+        driverController.a().whileTrue(Extendavator.goToPoseUntilAtSetpointCmd(Pose.SCORE))
+        driverController.y().whileTrue(Extendavator.goToPoseUntilAtSetpointCmd(Pose.SCORE + Pose(1.75.feet, 3.0.feet, 90.0.degrees)))
 
 
         driverController.rightTrigger(0.02).whileTrue(Extendavator.moveBetweenPosesCmd())

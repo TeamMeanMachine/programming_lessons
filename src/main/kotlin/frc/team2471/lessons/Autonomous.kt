@@ -74,12 +74,12 @@ object Autonomous: Autonomi() {
     /** Autonomous commands */
 
     fun elevatorAuto() = command("elevatorAuto") {
-        await(Extendavator.goToPoseCmd(Pose.STOW))
-        await(Extendavator.goToPoseCmd(Pose.INTAKE_MAX))
-        await(Extendavator.goToPoseCmd(Pose.STOW))
-        await(Extendavator.goToPoseCmd(Pose.SCORE))
+        await(Extendavator.goToPoseUntilAtSetpointCmd(Pose.STOW))
+        await(Extendavator.goToPoseUntilAtSetpointCmd(Pose.INTAKE_MAX))
+        await(Extendavator.goToPoseUntilAtSetpointCmd(Pose.STOW))
+        await(Extendavator.goToPoseUntilAtSetpointCmd(Pose.SCORE))
         println("finished scoring. Going back down now")
-        await(Extendavator.goToPoseCmd(Pose.STOW))
+        await(Extendavator.goToPoseUntilAtSetpointCmd(Pose.STOW))
     }
 
     fun printHelloCommand() = command("printHello") {

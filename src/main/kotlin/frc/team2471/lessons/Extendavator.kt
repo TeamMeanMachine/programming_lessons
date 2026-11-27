@@ -104,18 +104,18 @@ object Extendavator: MechanismBase("Extendavator") {
         pivotMotor.configSim(DCMotor.getKrakenX44(1), 0.0001)
     }
 
-    fun goToPose(pose: Pose) {
+    fun goToPoseCmd(pose: Pose) = command("goToPose", this) {
         elevatorSetpoint = pose.elevatorHeight
         extensionSetpoint = pose.extensionDistance
         pivotSetpoint = pose.pivotAngle
     }
 
-    fun goToPoseCmd(pose: Pose, stopWhenAtSetpoint: Boolean = true) = command("goToPoseCmd", this) {
+    fun goToPoseUntilAtSetpointCmd(pose: Pose) = command("goToPoseCmd", this) {
         periodic {
-            goToPose(pose)
+            await(goToPoseCmd(pose))
             val error = (pose - Pose.current).absoluteValue()
 
-            if (stopWhenAtSetpoint && error.elevatorHeight < 1.0.inches && error.extensionDistance < 1.0.inches && error.pivotAngle < 1.0.degrees) {
+            if (error.elevatorHeight < 1.0.inches && error.extensionDistance < 1.0.inches && error.pivotAngle < 1.0.degrees) {
                 stop()
                 println("finished going to pose")
             }
@@ -130,7 +130,7 @@ object Extendavator: MechanismBase("Extendavator") {
             val poseDifference = pose2 - pose1
             val interpolatedPose = pose1 + poseDifference * OI.driverController.rightTrigger.deadband(0.1)
 
-            goToPose(interpolatedPose)
+            await(goToPoseCmd(interpolatedPose))
         }
     }
 
@@ -143,7 +143,7 @@ object Extendavator: MechanismBase("Extendavator") {
 
             val pose = Pose(height, extension, pivot)
 
-            goToPose(pose) // Tell Extendavator to move to the pose
+            await(goToPoseCmd(pose)) // Tell Extendavator to move to the pose
             Drive.stop() // Stop moving the drivetrain because we are using the joysticks
         }
     }
