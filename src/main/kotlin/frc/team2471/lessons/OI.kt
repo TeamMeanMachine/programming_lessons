@@ -96,41 +96,20 @@ object OI: MechanismBase("OI") {
         driverController.rightTrigger(0.02).whileTrue(Extendavator.moveBetweenPosesCmd())
         driverController.leftTrigger(0.1).whileTrue(Extendavator.controlWithJoystick())
 
+
         driverController.menu().onTrue(Drive.zeroGyroCommand()) // Zero Gyro
         driverController.view().onTrue(command("zero pose") { Drive.pose = Pose2d(Translation2d(3.0, 3.0), Drive.heading) }) // Reset Odometry Position
-
     }
 
-    override fun periodic() {
-        LoopLogger.record("OI periodic")
-    }
 
+
+    // Teleop OpMode. Supports scoping. Can bind specific triggers in teleop only if desired.
     @Teleop(name = "Country Roads!")
     class TeleopMode: PeriodicOpMode() {
-        init {
-            println("TeleopMode selected")
-
-            /** Joystick bindings in teleop only */
-
-
-
-            if (demoMode) {
-                println("Demo mode enabled")
-                // Demo mode bindings go here
-            }
-
-        }
-
+        init { println("TeleopMode selected") }
         override fun disabledPeriodic() {}
-
-        override fun start() {
-            println("Teleop Mode start!")
-        }
-
+        override fun start() { println("Teleop Mode start!") }
         override fun periodic() {}
-
-        override fun end() {
-            println("Teleop Mode end!")
-        }
+        override fun end() { println("Teleop Mode end!") }
     }
 }
