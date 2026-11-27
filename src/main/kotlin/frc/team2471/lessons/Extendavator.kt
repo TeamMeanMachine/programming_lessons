@@ -18,10 +18,9 @@ import org.wpilib.units.measure.Distance
 
 object Extendavator: MechanismBase("Extendavator") {
 
-    // LoggedTalonFX is the same as normal TalonFX, except it supports simulation, logging, and replay.
-    val elevatorMotor = LoggedTalonFX(Talons.ELEVATOR_0)
-    val extensionMotor = LoggedTalonFX(Talons.EXTENSION)
-    val pivotMotor = LoggedTalonFX(Talons.INTAKE_PIVOT)
+    // TODO: Create 3 LoggedTalonFX motors. elevatorMotor, extensionMotor, pivotMotor
+
+
 
     val MIN_EXTENSION_DIST = 22.0.inches
     val MAX_EXTENSION_DIST = 3.5.feet
@@ -32,152 +31,109 @@ object Extendavator: MechanismBase("Extendavator") {
     val MIN_PIVOT_ANGLE = -90.0.degrees
     val MAX_PIVOT_ANGLE = 90.0.degrees
 
-    @get:AutoLogOutput(key = "Extendavator/elevatorSetpoint")
-    var elevatorSetpoint = 0.0.feet
-        set(value) {
-            val safeValue = value.coerceIn(MIN_ELEVATOR_HEIGHT, MAX_ELEVATOR_HEIGHT)
-            elevatorMotor.setControl(PositionVoltage(safeValue.asInches))
-            field = safeValue
-        }
+    // TODO: Create elevatorSetpoint as a var and a setter to set the elevatorMotor to go to a position (PositionVoltage)
 
-    @get:AutoLogOutput(key = "Extendavator/extensionSetpoint")
-    var extensionSetpoint = MIN_EXTENSION_DIST
-        set(value) {
-            val safeValue = value.coerceIn(MIN_EXTENSION_DIST, MAX_EXTENSION_DIST)
-            extensionMotor.setControl(PositionVoltage(safeValue.asInches))
-            field = safeValue
-        }
 
-    @get:AutoLogOutput(key = "Extendavator/pivotSetpoint")
-    var pivotSetpoint = 0.0.degrees
-        set(value) {
-            val safeValue = value.coerceIn(MIN_PIVOT_ANGLE, MAX_PIVOT_ANGLE)
-            pivotMotor.setControl(PositionVoltage(safeValue))
-            field = safeValue
-        }
 
-    @get:AutoLogOutput(key = "Extendavator/elevatorHeight")
-    val elevatorHeight: Distance get() = elevatorMotor.position.valueAsDouble.inches
-    @get:AutoLogOutput(key = "Extendavator/extensionDistance")
-    val extensionDistance: Distance get() = extensionMotor.position.valueAsDouble.inches
-    @get:AutoLogOutput(key = "Extendavator/pivotAngle")
-    val pivotAngle: Angle get() = pivotMotor.position.value
 
-    @get:AutoLogOutput(key = "Extendavator/heightError")
-    val heightError: Distance get() = elevatorMotor.closedLoopError.valueAsDouble.inches
-    @get:AutoLogOutput(key = "Extendavator/extensionError")
-    val extensionError: Distance get() = extensionMotor.closedLoopError.valueAsDouble.inches
-    @get:AutoLogOutput(key = "Extendavator/pivotError")
-    val pivotError: Angle get() = pivotMotor.closedLoopError.valueAsDouble.rotations
+    // TODO: Create extensionSetpoint and pivotSetpoint. (remember that extension is in inches and pivot is in rotations)
 
-    val totalErrorPose: Pose get() = Pose(heightError, extensionError, pivotError)
 
-    @get:AutoLogOutput(key = "Extendavator/atSetpoint")
-    val atSetpoint: Boolean
-        get() {
-            val error = totalErrorPose.absoluteValue()
-            return error.pivotAngle < 1.0.degrees && error.elevatorHeight < 1.0.inches && error.extensionDistance < 1.0.inches
-        }
+
+
+    // TODO: Create elevatorHeight, extensionDistance, and pivotAngle getters. (Make sure they are in appropriate units, Distance and Angle)
+
+
+
+
+    // TODO: Create heightError, extensionError, and pivotError getters. (Make sure they are in appropriate units, Distance and Angle)
+
+
+
+
+    // TODO: Create totalErrorPose getter of type Pose and an atSetpoint Boolean getter.
+
+
+
 
     init {
+        println("Extendavator init")
 
-        elevatorMotor.applyConfiguration {
-            currentLimits(30.0, 40.0, 1.0)
-            sensorToMechanismRatio(1.0/5.33) // Gear ratio, motor rotations to inches height
-            p(0.2)
-        }
-        elevatorMotor.addFollower(Talons.ELEVATOR_1)
-        elevatorMotor.configSim(DCMotor.getKrakenX60(2), 0.0001)
 
-        extensionMotor.applyConfiguration {
-            currentLimits(30.0, 40.0, 1.0)
-            sensorToMechanismRatio(1.0/1.05) // Gear ratio, motor rotations to inches extension
-            p(0.5)
-        }
-        extensionMotor.configSim(DCMotor.getKrakenX44(1), 0.0001)
+        // TODO: Configure elevator motor. Set current limits, a sensor-to-mechanism ratio of 0.187, and p value of 0.2
 
-        pivotMotor.applyConfiguration {
-            currentLimits(30.0, 40.0, 1.0)
-            sensorToMechanismRatio(33.75) // Gear ratio, motor rotations to pivot rotations
-            p(17.0)
-        }
-        pivotMotor.configSim(DCMotor.getKrakenX44(1), 0.0001)
-    }
 
-    fun goToPoseCmd(pose: Pose) = command("goToPose", this) {
-        elevatorSetpoint = pose.elevatorHeight
-        extensionSetpoint = pose.extensionDistance
-        pivotSetpoint = pose.pivotAngle
-    }
 
-    fun goToPoseUntilAtSetpointCmd(pose: Pose) = command("goToPoseCmd", this) {
-        periodic {
-            await(goToPoseCmd(pose))
-            val error = (pose - Pose.current).absoluteValue()
+        // TODO: Add ELEVATOR_1 ID as a follower to elevatorMotor
+        // TODO: Configure the elevatorMotor sim. With 2 KrackenX60s and a moi of 0.0001
 
-            if (error.elevatorHeight < 1.0.inches && error.extensionDistance < 1.0.inches && error.pivotAngle < 1.0.degrees) {
-                stop()
-                println("finished going to pose")
-            }
-        }
-    }
 
-    // Go in between two poses using linear interpolation and the driverController trigger.
-    fun moveBetweenPosesCmd() = command("moveBetweenPosesCmd",this) {
-        periodic {
-            val pose1 = Pose.INTAKE_MIN
-            val pose2 = Pose.INTAKE_MAX
-            val poseDifference = pose2 - pose1
-            val interpolatedPose = pose1 + poseDifference * OI.driverController.rightTrigger.deadband(0.1)
 
-            await(goToPoseCmd(interpolatedPose))
-        }
-    }
 
-    // Control all axis with joystick inputs
-    fun controlWithJoystick() = command("controlWithJoystick", this, Drive) { // Require Extendavator and Drive because we are using both Mechanisms.
-        periodic {
-            val height =  MAX_ELEVATOR_HEIGHT * -OI.driverController.leftY.coerceIn(-1.0, 0.0)
-            val extension = MAX_EXTENSION_DIST * OI.driverController.leftX.coerceIn(0.0, 1.0)
-            val pivot = MAX_PIVOT_ANGLE * OI.driverController.rightY
 
-            val pose = Pose(height, extension, pivot)
+        // TODO: Configure extension and pivot motors. Set current limits, sensor-to-mechanism ratios, p values, and simulation
 
-            await(goToPoseCmd(pose)) // Tell Extendavator to move to the pose
-            Drive.stop() // Stop moving the drivetrain because we are using the joysticks
-        }
+
+        // TODO: extensionMotor has a sensor-to-mechanism ratio of 1.0/1.05, a p value of 0.5, 1 KrackenX44, and moi of 0.0001
+
+
+
+
+        // TODO: pivotMotor has a sensor-to-mechanism ratio of 33.75, a p value of 17.0, 1 KrackenX44, and moi of 0.0001
+
+
+
+
     }
 
 
+    // TODO: Write goToPoseCmd() command which calls the elevator, extension, and pivot setters.
+
+
+    // TODO: Write goToPoseUntilAtSetpointCmd() command which calls goToPoseCmd until the extendavator has reached its setpoint
+
+
+
+
+    // TODO: moveBetweenPosesCmd()
+
+
+
+
+    // TODO: controlWithJoystickCmd()
 
 
 
 
 
-    @get:AutoLogOutput(key = "Components/measuredComponents")
-    val measuredComponents: Array<Pose3d> // Simulated motor components of extendavator
-        get() {
-            return createComponentArray(
-                0.0.degrees,
-                Extendavator.elevatorHeight,
-                Extendavator.extensionDistance - Extendavator.MIN_EXTENSION_DIST,
-                Extendavator.pivotAngle
-            )
-        }
 
-    @get:AutoLogOutput(key = "Components/setpointComponents")
-    val setpointComponents: Array<Pose3d> // Setpoint components of extendavator
-        get() {
-            return createComponentArray(
-                0.0.degrees,
-                Extendavator.elevatorSetpoint,
-                Extendavator.extensionSetpoint - Extendavator.MIN_EXTENSION_DIST,
-                Extendavator.pivotSetpoint
-            )
-        }
+    // TODO: Uncomment the lines below! After elevatorHeight, extensionDistance, and pivotAngle vals get created
 
-    // Creates an array of Pose3d representing the components of the extendavator. For AdvantageScope visualization
+//    @get:AutoLogOutput(key = "Components/measuredComponents")
+//    val measuredComponents: Array<Pose3d> // Simulated motor components of extendavator
+//        get() {
+//            return createComponentArray(
+//                0.0.degrees,
+//                Extendavator.elevatorHeight,
+//                Extendavator.extensionDistance - Extendavator.MIN_EXTENSION_DIST,
+//                Extendavator.pivotAngle
+//            )
+//        }
+//
+//    @get:AutoLogOutput(key = "Components/setpointComponents")
+//    val setpointComponents: Array<Pose3d> // Setpoint components of extendavator
+//        get() {
+//            return createComponentArray(
+//                0.0.degrees,
+//                Extendavator.elevatorSetpoint,
+//                Extendavator.extensionSetpoint - Extendavator.MIN_EXTENSION_DIST,
+//                Extendavator.pivotSetpoint
+//            )
+//        }
+
+    /** Creates an array of Pose3d representing the components of the extendavator. For AdvantageScope visualization. */
     private fun createComponentArray(turretAngle: Angle, carriageHeight: Distance, extensionDistance: Distance, wristAngle: Angle): Array<Pose3d> {
+
         val turretRotation = Rotation3d(0.0.degrees, 0.0.degrees, turretAngle)
         val wristRotation = Rotation3d(0.0.degrees, wristAngle, turretAngle)
 

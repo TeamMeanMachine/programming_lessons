@@ -16,9 +16,8 @@ data class Pose(val elevatorHeight: Distance, val extensionDistance: Distance, v
 
 
     companion object {
-        val current: Pose
-            get() = Pose(Extendavator.elevatorHeight, Extendavator.extensionDistance, Extendavator.pivotAngle)
 
+        // Preset Poses
 
         val STOW = Pose(0.0.inches, 0.0.inches, -90.0.degrees)
         val INTAKE_MIN = Pose(0.0.inches, 15.0.inches, -10.0.degrees)

@@ -85,14 +85,16 @@ object OI: MechanismBase("OI") {
 
         /** DEFAULT JOYSTICK BINDINGS. (Will be active by default in every OpMode unless overridden) */
 
-        driverController.x().whileTrue(Extendavator.goToPoseUntilAtSetpointCmd(Pose.INTAKE_MIN))
-        driverController.b().whileTrue(Extendavator.goToPoseUntilAtSetpointCmd(Pose.INTAKE_MAX))
-        driverController.a().whileTrue(Extendavator.goToPoseUntilAtSetpointCmd(Pose.SCORE))
-        driverController.y().whileTrue(Extendavator.goToPoseUntilAtSetpointCmd(Pose.SCORE + Pose(1.75.feet, 3.0.feet, 90.0.degrees)))
+        // TODO: Bind a, b, x, y to different Poses from Pose.kt using goToPoseUntilAtSetpointCmd()
 
 
-        driverController.rightTrigger(0.02).whileTrue(Extendavator.moveBetweenPosesCmd())
-        driverController.leftTrigger(0.1).whileTrue(Extendavator.controlWithJoystick())
+
+
+        // TODO: Bind left trigger to moveBetweenPosesCmd()
+
+
+        // TODO: Bind right trigger to controlWithJoystick()
+
 
 
         driverController.menu().onTrue(Drive.zeroGyroCommand()) // Zero Gyro
