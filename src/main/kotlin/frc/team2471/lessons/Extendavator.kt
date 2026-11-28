@@ -90,17 +90,9 @@ object Extendavator: MechanismBase("Extendavator") {
     // TODO: Write goToPoseCmd() command which calls the elevator, extension, and pivot setters.
 
 
-    // TODO: Write goToPoseUntilAtSetpointCmd() command which calls goToPoseCmd until the extendavator has reached its setpoint
 
 
 
-
-    // TODO: moveBetweenPosesCmd()
-
-
-
-
-    // TODO: controlWithJoystickCmd()
 
 
 
@@ -108,7 +100,6 @@ object Extendavator: MechanismBase("Extendavator") {
 
 
     // TODO: Uncomment the lines below! After elevatorHeight, extensionDistance, and pivotAngle vals get created
-
 //    @get:AutoLogOutput(key = "Components/measuredComponents")
 //    val measuredComponents: Array<Pose3d> // Simulated motor components of extendavator
 //        get() {

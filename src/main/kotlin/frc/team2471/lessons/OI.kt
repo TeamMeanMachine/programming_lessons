@@ -90,11 +90,6 @@ object OI: MechanismBase("OI") {
 
 
 
-        // TODO: Bind left trigger to moveBetweenPosesCmd()
-
-
-        // TODO: Bind right trigger to controlWithJoystick()
-
 
 
         driverController.menu().onTrue(Drive.zeroGyroCommand()) // Zero Gyro

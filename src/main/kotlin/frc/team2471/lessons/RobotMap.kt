@@ -5,14 +5,6 @@ package frc.team2471.lessons
 import com.ctre.phoenix6.CANBus
 import org.wpilib.hardware.bus.CANPort
 
-object AnalogSensors {
-}
-
-object DigitalSensors {
-    const val INTAKE_STOP_SENSOR_0 = 9
-    const val INTAKE_STOP_SENSOR_1 = 1
-}
-
 object Sparks { // SPARK REV motors
 }
 
@@ -29,7 +21,6 @@ object Talons { // TalonFX CTRE motors
     const val BACK_LEFT_DRIVE = 10
     const val BACK_LEFT_STEER = 11
 
-    const val INTAKE_ROLLER = 54
     const val INTAKE_PIVOT = 55
     const val ELEVATOR_0 = 60
     const val ELEVATOR_1 = 59

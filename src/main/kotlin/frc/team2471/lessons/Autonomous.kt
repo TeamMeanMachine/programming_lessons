@@ -29,7 +29,6 @@ object Autonomous: Autonomi() {
         AutoRoutine("Square Path Test", squarePathTest()),
         AutoRoutine("Print for 20 seconds", printFor20Seconds()),
         AutoRoutine("Print Hello", printHelloCommand()),
-        AutoRoutine("Elevator Auto", elevatorAuto())
     )
 
     /** All test routines for Utility mode. Gets registered as an OpMode. */
@@ -72,15 +71,6 @@ object Autonomous: Autonomi() {
     }
 
     /** Autonomous commands */
-
-    fun elevatorAuto() = command("elevatorAuto") {
-        await(Extendavator.goToPoseUntilAtSetpointCmd(Pose.STOW))
-        await(Extendavator.goToPoseUntilAtSetpointCmd(Pose.INTAKE_MAX))
-        await(Extendavator.goToPoseUntilAtSetpointCmd(Pose.STOW))
-        await(Extendavator.goToPoseUntilAtSetpointCmd(Pose.SCORE))
-        println("finished scoring. Going back down now")
-        await(Extendavator.goToPoseUntilAtSetpointCmd(Pose.STOW))
-    }
 
     fun printHelloCommand() = command("printHello") {
         println("hello")
