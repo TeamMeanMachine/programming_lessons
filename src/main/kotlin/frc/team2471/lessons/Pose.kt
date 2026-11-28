@@ -21,7 +21,7 @@ data class Pose(val elevatorHeight: Distance, val extensionDistance: Distance, v
 
 
         val STOW = Pose(0.0.inches, 0.0.inches, -90.0.degrees)
-        val INTAKE_MIN = Pose(0.0.inches, 15.0.inches, -10.0.degrees)
+        val INTAKE_MIN = Pose(0.0.inches, 0.0.inches, -10.0.degrees)
         val INTAKE_MAX = Pose(0.0.inches, Extendavator.MAX_EXTENSION_DIST, -10.0.degrees)
         val SCORE = Pose(3.0.feet, 0.0.inches, -10.0.degrees)
     }

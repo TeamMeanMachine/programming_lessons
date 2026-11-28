@@ -21,8 +21,8 @@ object Extendavator: MechanismBase("Extendavator") {
     val extensionMotor = LoggedTalonFX(Talons.EXTENSION)
     val pivotMotor = LoggedTalonFX(Talons.INTAKE_PIVOT)
 
-    val MIN_EXTENSION_DIST = 22.0.inches
-    val MAX_EXTENSION_DIST = 3.5.feet
+    val MIN_EXTENSION_DIST = 0.0.inches
+    val MAX_EXTENSION_DIST = 14.0.inches
 
     val MIN_ELEVATOR_HEIGHT = 0.0.inches
     val MAX_ELEVATOR_HEIGHT = 59.25.inches
@@ -92,14 +92,14 @@ object Extendavator: MechanismBase("Extendavator") {
             sensorToMechanismRatio(1.0/1.05) // Gear ratio, motor rotations to inches extension
             p(0.5)
         }
-        extensionMotor.configSim(DCMotor.getKrakenX44(1), 0.0001)
+        extensionMotor.configSim(DCMotor.getKrakenX60(1), 0.0001)
 
         pivotMotor.applyConfiguration {
             currentLimits(30.0, 40.0, 1.0)
             sensorToMechanismRatio(33.75) // Gear ratio, motor rotations to pivot rotations
             p(17.0)
         }
-        pivotMotor.configSim(DCMotor.getKrakenX44(1), 0.0001)
+        pivotMotor.configSim(DCMotor.getKrakenX60(1), 0.0001)
     }
 
     fun goToPoseCmd(pose: Pose) = command("goToPose", this) {
@@ -119,7 +119,7 @@ object Extendavator: MechanismBase("Extendavator") {
             return createComponentArray(
                 0.0.degrees,
                 Extendavator.elevatorHeight,
-                Extendavator.extensionDistance - Extendavator.MIN_EXTENSION_DIST,
+                Extendavator.extensionDistance,
                 Extendavator.pivotAngle
             )
         }
@@ -130,7 +130,7 @@ object Extendavator: MechanismBase("Extendavator") {
             return createComponentArray(
                 0.0.degrees,
                 Extendavator.elevatorSetpoint,
-                Extendavator.extensionSetpoint - Extendavator.MIN_EXTENSION_DIST,
+                Extendavator.extensionSetpoint,
                 Extendavator.pivotSetpoint
             )
         }
