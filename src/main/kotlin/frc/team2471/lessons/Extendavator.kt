@@ -72,12 +72,12 @@ object Extendavator: MechanismBase("Extendavator") {
         // TODO: Configure extension and pivot motors. Set current limits, sensor-to-mechanism ratios, p values, and simulation
 
 
-        // TODO: extensionMotor has a sensor-to-mechanism ratio of 1.0/1.05, a p value of 0.5, 1 KrackenX44, and moi of 0.0001
+        // TODO: extensionMotor has a sensor-to-mechanism ratio of 1.0/1.05, a p value of 0.5, 1 KrackenX60, and moi of 0.0001
 
 
 
 
-        // TODO: pivotMotor has a sensor-to-mechanism ratio of 33.75, a p value of 17.0, 1 KrackenX44, and moi of 0.0001
+        // TODO: pivotMotor has a sensor-to-mechanism ratio of 33.75, a p value of 17.0, 1 KrackenX60, and moi of 0.0001
 
 
 
