@@ -4,10 +4,8 @@ import com.ctre.phoenix6.controls.PositionVoltage
 import org.littletonrobotics.junction.AutoLogOutput
 import org.team2471.frc.lib.commands.MechanismBase
 import org.team2471.frc.lib.commands.command
-import org.team2471.frc.lib.commands.periodic
 import org.team2471.frc.lib.hardware.ctre.*
 import org.team2471.frc.lib.hardware.loggedMotors.LoggedTalonFX
-import org.team2471.frc.lib.math.deadband
 import org.team2471.frc.lib.units.*
 import org.wpilib.math.geometry.Pose3d
 import org.wpilib.math.geometry.Rotation3d
@@ -22,8 +20,8 @@ object Extendavator: MechanismBase("Extendavator") {
 
 
 
-    val MIN_EXTENSION_DIST = 22.0.inches
-    val MAX_EXTENSION_DIST = 3.5.feet
+    val MIN_EXTENSION_DIST = 0.0.inches
+    val MAX_EXTENSION_DIST = 14.0.inches
 
     val MIN_ELEVATOR_HEIGHT = 0.0.inches
     val MAX_ELEVATOR_HEIGHT = 59.25.inches
@@ -106,7 +104,7 @@ object Extendavator: MechanismBase("Extendavator") {
 //            return createComponentArray(
 //                0.0.degrees,
 //                Extendavator.elevatorHeight,
-//                Extendavator.extensionDistance - Extendavator.MIN_EXTENSION_DIST,
+//                Extendavator.extensionDistance,
 //                Extendavator.pivotAngle
 //            )
 //        }
@@ -117,7 +115,7 @@ object Extendavator: MechanismBase("Extendavator") {
 //            return createComponentArray(
 //                0.0.degrees,
 //                Extendavator.elevatorSetpoint,
-//                Extendavator.extensionSetpoint - Extendavator.MIN_EXTENSION_DIST,
+//                Extendavator.extensionSetpoint,
 //                Extendavator.pivotSetpoint
 //            )
 //        }
