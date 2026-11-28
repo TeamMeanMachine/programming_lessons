@@ -4,10 +4,8 @@ import com.ctre.phoenix6.controls.PositionVoltage
 import org.littletonrobotics.junction.AutoLogOutput
 import org.team2471.frc.lib.commands.MechanismBase
 import org.team2471.frc.lib.commands.command
-import org.team2471.frc.lib.commands.periodic
 import org.team2471.frc.lib.hardware.ctre.*
 import org.team2471.frc.lib.hardware.loggedMotors.LoggedTalonFX
-import org.team2471.frc.lib.math.deadband
 import org.team2471.frc.lib.units.*
 import org.wpilib.math.geometry.Pose3d
 import org.wpilib.math.geometry.Rotation3d
@@ -109,45 +107,6 @@ object Extendavator: MechanismBase("Extendavator") {
         extensionSetpoint = pose.extensionDistance
         pivotSetpoint = pose.pivotAngle
     }
-
-    fun goToPoseUntilAtSetpointCmd(pose: Pose) = command("goToPoseCmd", this) {
-        periodic {
-            await(goToPoseCmd(pose))
-            val error = (pose - Pose.current).absoluteValue()
-
-            if (error.elevatorHeight < 1.0.inches && error.extensionDistance < 1.0.inches && error.pivotAngle < 1.0.degrees) {
-                stop()
-                println("finished going to pose")
-            }
-        }
-    }
-
-    // Go in between two poses using linear interpolation and the driverController trigger.
-    fun moveBetweenPosesCmd() = command("moveBetweenPosesCmd",this) {
-        periodic {
-            val pose1 = Pose.INTAKE_MIN
-            val pose2 = Pose.INTAKE_MAX
-            val poseDifference = pose2 - pose1
-            val interpolatedPose = pose1 + poseDifference * OI.driverController.rightTrigger.deadband(0.1)
-
-            await(goToPoseCmd(interpolatedPose))
-        }
-    }
-
-    // Control all axis with joystick inputs
-    fun controlWithJoystick() = command("controlWithJoystick", this, Drive) { // Require Extendavator and Drive because we are using both Mechanisms.
-        periodic {
-            val height =  MAX_ELEVATOR_HEIGHT * -OI.driverController.leftY.coerceIn(-1.0, 0.0)
-            val extension = MAX_EXTENSION_DIST * OI.driverController.leftX.coerceIn(0.0, 1.0)
-            val pivot = MAX_PIVOT_ANGLE * OI.driverController.rightY
-
-            val pose = Pose(height, extension, pivot)
-
-            await(goToPoseCmd(pose)) // Tell Extendavator to move to the pose
-            Drive.stop() // Stop moving the drivetrain because we are using the joysticks
-        }
-    }
-
 
 
 
